@@ -31,6 +31,25 @@ def build(src_dir, output_path):
         make_archive(build_dir, output_path)
         return output_path
 
+def build_debian(src_dir, output_path):
+    with tempfile.TemporaryDirectory() as build_dir:
+        copy_tree(src_dir, build_dir)
+        if os.path.exists(os.path.join(src_dir, 'requirements.txt')):
+            subprocess.run(
+                [sys.executable,
+                 '-m',
+                 'pip',
+                 'install',
+                 '--ignore-installed',
+                 '--system',
+                 '--target', build_dir,
+                 '-r', os.path.join(build_dir, 'requirements.txt')],
+                 check=True,
+                 stdout=subprocess.DEVNULL,
+            )
+        make_archive(build_dir, output_path)
+        return output_path
+
 
 def make_archive(src_dir, output_path):
     try:
@@ -70,6 +89,10 @@ def get_hash(output_path):
 if __name__ == '__main__':
     logging.basicConfig(level='DEBUG')
     query = json.loads(sys.stdin.read())
+    debian_flag = os.path.exists('/etc/debian_version')
     logging.debug(query)
-    archive = build(query['src_dir'], query['output_path'])
+    if debian_flag:
+        archive = build_debian(query['src_dir'], query['output_path'])
+    else:
+        archive = build(query['src_dir'], query['output_path'])
     print(json.dumps({'archive': archive, "base64sha256":get_hash(archive)}))
