@@ -7,3 +7,9 @@ variable "output_path" {
   description = "The output of the archive file."
   type        = "string"
 }
+
+variable "install_dependencies" {
+  description = "Whether to install pip dependecies"
+  type        = bool
+  default     = true
+}
